@@ -385,37 +385,7 @@ bool RevProc::LoadInstructionTable(){
 }
 
 bool RevProc::Reset(){
-//  // reset the register file
-//  for (int t=0;  t < _REV_HART_COUNT_; t++){
-//    RevRegFile* regFile = GetRegFile(t);
-//
-//    // Zero all register data
-//    *regFile = RevRegFile{};
-//
-//    // initialize all the relevant program registers
-//
-//    // -- x2 : stack pointer
-//    regFile->SetX(feature, 2, mem->GetStackTop());
-//
-//    // -- x3 : global pointer
-//    auto gp = loader->GetSymbolAddr("__global_pointer$");
-//    regFile->SetX(feature, 3, gp);
-//
-//    // -- x8 : frame pointer
-//    regFile->SetX(feature, 8, gp);
-//
-//    // Set shared pointer to proc's load store queue
-    regFile->LSQueue = LSQueue;
-
-    regFile->cost = 0;
-
-    regFile->MarkLoadComplete = std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1);
-
-  }
-
   Pipeline.clear();
-  
-  // SetupArgs();
 
   HART_CTS.set();
 
@@ -1733,7 +1703,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }else{
       Stalled = false;
     }
-
+    
     // If the next instruction is our special bounce address
     // DO NOT decode it.  It will decode to a bogus instruction.
     // We do not want to retire this instruction until we're ready
@@ -1789,9 +1759,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
       Ext->SetRegFile(RegFile);
 
       // -- BEGIN new pipelining implementation
-      if( !PendingCtxSwitch ){
-        Pipeline.push_back(std::make_pair(HartToExec, Inst));
-      }
+      Pipeline.push_back(std::make_pair(HartToExec, Inst));
 
       if( (Ext->GetName() == "RV32F") ||
           (Ext->GetName() == "RV32D") ||
@@ -1944,12 +1912,11 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   if(!Pipeline.empty() &&
      (Pipeline.front().second.cost > 0)){
     Pipeline.front().second.cost--;
-    if((Pipeline.front().second.cost == 0)){ // &&
-     //  (!*(Pipeline.front().second.hazard))){
+    if(Pipeline.front().second.cost == 0){ // &&
       // Ready to retire this instruction
       uint16_t tID = Pipeline.front().first;
       output->verbose(CALL_INFO, 6, 0,
-                      "Core %u ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
+                      "Core %d ; ThreadID %d; Retiring PC= 0x%" PRIx64 "\n",
                       id, tID, ExecPC);
       Retired++;
       DependencyClear(tID, &(Pipeline.front().second));
@@ -2057,7 +2024,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // tidAddr is the address we have to write the new thread's id to
   output->verbose(CALL_INFO, 2, 0,
                   "Creating new thread with PC = 0x%" PRIx64 "\n", firstPC);
-  uint64_t ParentPID = GetActiveThreadID();
+  uint64_t ParentThreadID = GetActiveThreadID();
 
   
   // Create the new thread's memory
@@ -2069,7 +2036,7 @@ void RevProc::CreateThread(uint32_t NewTID, uint64_t firstPC, void* arg){
   // Create a new RevThread Object
   std::shared_ptr<RevThread> NewThread =
             std::make_shared<RevThread>(NewTID,
-                                        ParentPID, 
+                                        ParentThreadID,
                                         NewThreadMem->getBaseAddr()+_STACK_SIZE_,
                                         firstPC, NewThreadMem,
                                         feature);
