@@ -2701,15 +2701,15 @@ void RevCPU::CheckForThreadStateChanges(uint32_t ProcID){
               // Continue executing thread on same Core
               Thread->SetState(ThreadState::RUNNING);
             }
-            else { // -- 3.
-              output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " was waiting on thread %u which has not yet completed so it remains blocked\n",
-                             Thread->GetThreadID(), ProcID, Thread->GetWaitingToJoinTID());
-              Thread->SetState(ThreadState::BLOCKED);
-              // -- 3a.
-              BlockedThreads.emplace(Thread->GetThreadID());
-              // -- 3b.
-              AssignedThreads.at(ProcID).erase(AssignedThreads.at(ProcID).begin()+HartID);
-            }
+            // else { // -- 3.
+            //   output.verbose(CALL_INFO, 8, 0, "Thread %" PRIu32 " on Core %" PRIu32 " was waiting on thread %u which has not yet completed so it remains blocked\n",
+            //                  Thread->GetThreadID(), ProcID, Thread->GetWaitingToJoinTID());
+            //   Thread->SetState(ThreadState::BLOCKED);
+            //   // -- 3a.
+            //   BlockedThreads.emplace(Thread->GetThreadID());
+            //   // -- 3b.
+            //   AssignedThreads.at(ProcID).erase(AssignedThreads.at(ProcID).begin()+HartID);
+            // }
             break;
           case ThreadState::START: // Should never happen
             output.fatal(CALL_INFO, 99, "Error: Thread %" PRIu32 " on Core %" PRIu32 " is assigned but is in START state... This is a bug\n",

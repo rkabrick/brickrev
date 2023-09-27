@@ -225,7 +225,7 @@ private:
   };
 
   // TODO: We may need one of these per HART
-  ECALLState ECALL;
+  std::vector<std::shared_ptr<ECALLState>> ECALLStates;
 
   ECALL_status_t ECALL_LoadAndParseString(RevInst& inst, uint64_t straddr, std::function<void()>);
 

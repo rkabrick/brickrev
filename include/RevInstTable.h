@@ -38,7 +38,7 @@
 #endif
 
 #ifndef _REV_HART_COUNT_
-#define _REV_HART_COUNT_ 1
+#define _REV_HART_COUNT_ 4
 #endif
 
 

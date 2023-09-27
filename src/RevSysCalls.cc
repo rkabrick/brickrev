@@ -51,11 +51,11 @@ RevProc::ECALL_status_t RevProc::ECALL_setxattr(RevInst& inst){
   // host-side value which has size bytes
   std::vector<char> hostValue(size);
 
-  if(ECALL.path_string.empty()){
+  if(ECALLStates.at(feature->GetHartToExec()).path_string.empty()){
     // We are still parsing the path string. When it is finished, we
-    // will move the ECALL.string to ECALL.path_string and continue below
+    // will move the ECALLStates.at(feature->GetHartToExec()).string to ECALLStates.at(feature->GetHartToExec()).path_string and continue below
     auto action = [&]{
-      ECALL.path_string = std::move(ECALL.string);
+      ECALLStates.at(feature->GetHartToExec()).path_string = std::move(ECALLStates.at(feature->GetHartToExec()).string);
     };
     auto rtv = ECALL_LoadAndParseString(inst, path, action);
 
@@ -69,22 +69,22 @@ RevProc::ECALL_status_t RevProc::ECALL_setxattr(RevInst& inst){
 
 #ifdef __APPLE__
       uint32_t position = 0;
-      int rc = setxattr(ECALL.path_string.c_str(),
-                        ECALL.string.c_str(),
+      int rc = setxattr(ECALLStates.at(feature->GetHartToExec()).path_string.c_str(),
+                        ECALLStates.at(feature->GetHartToExec()).string.c_str(),
                         &hostValue[0],
                         size,
                         position,
                         flags);
 #else
-      int rc = setxattr(ECALL.path_string.c_str(),
-                        ECALL.string.c_str(),
+      int rc = setxattr(ECALLStates.at(feature->GetHartToExec()).path_string.c_str(),
+                        ECALLStates.at(feature->GetHartToExec()).string.c_str(),
                         &hostValue[0],
                         size,
                         flags);
 #endif
 
       // Clear path_string so that later calls parse path_string first
-      ECALL.path_string.clear();
+      ECALLStates.at(feature->GetHartToExec()).path_string.clear();
 
       // setxattr return code
       RegFile->SetX(feature, 10, rc);
@@ -283,7 +283,7 @@ RevProc::ECALL_status_t RevProc::ECALL_mkdirat(RevInst& inst){
 
   auto action = [&]{
     // Do the mkdirat on the host
-    int rc = mkdirat(dirfd, ECALL.string.c_str(), mode);
+    int rc = mkdirat(dirfd, ECALLStates.at(feature->GetHartToExec())->string.c_str(), mode);
     RegFile->SetX(feature, 10, rc);
   };
   return ECALL_LoadAndParseString(inst, path, action);
@@ -378,7 +378,7 @@ RevProc::ECALL_status_t RevProc::ECALL_chdir(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: chdir called\n");
   auto path = RegFile->GetX<uint64_t>(feature, 10);
   auto action = [&]{
-    int rc = chdir(ECALL.string.c_str());
+    int rc = chdir(ECALLStates.at(feature->GetHartToExec())->string.c_str());
     RegFile->SetX(feature, 10, rc);
   };
   return ECALL_LoadAndParseString(inst, path, action);
@@ -440,7 +440,7 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
   auto action = [&]{
     // Do the openat on the host
     dirfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
-    int fd = openat(dirfd, ECALL.string.c_str(), O_RDWR);
+    int fd = openat(dirfd, ECALLStates.at(feature->GetHartToExec())->string.c_str(), O_RDWR);
 
     AssignedThreads.at(HartToExec)->AddFD(fd);
 
@@ -466,32 +466,32 @@ RevProc::ECALL_status_t RevProc::ECALL_openat(RevInst& inst){
 
 //   /* Read the filename from memory one character at a time until we find '\0' */
 
-//   if('\0' != ECALL.buf[0]){
+//   if('\0' != ECALLStates.at(feature->GetHartToExec()).buf[0]){
 //     //We are in the middle of the string
-//     ECALL.string = ECALL.string + ECALL.buf[0];
-//     mem->ReadVal<char>(HartToExec, filenameAddr + sizeof(char)*ECALL.string.length(), &ECALL.buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+//     ECALLStates.at(feature->GetHartToExec()).string = ECALLStates.at(feature->GetHartToExec()).string + ECALLStates.at(feature->GetHartToExec()).buf[0];
+//     mem->ReadVal<char>(HartToExec, filenameAddr + sizeof(char)*ECALLStates.at(feature->GetHartToExec()).string.length(), &ECALLStates.at(feature->GetHartToExec()).buf[0], inst.hazard, REVMEM_FLAGS(0x00));
 //     rtval = RevProc::ECALL_status_t::CONTINUE;
 //     DependencySet(HartToExec, 10, false);
-//   }else if(('\0' == ECALL.buf[0]) && (ECALL.string.length() > 0)) {
+//   }else if(('\0' == ECALLStates.at(feature->GetHartToExec()).buf[0]) && (ECALLStates.at(feature->GetHartToExec()).string.length() > 0)) {
 //     //found the null terminator - we're done
-//     ECALL.string = ECALL.string + ECALL.buf[0];
+//     ECALLStates.at(feature->GetHartToExec()).string = ECALLStates.at(feature->GetHartToExec()).string + ECALLStates.at(feature->GetHartToExec()).buf[0];
 
 //     /* Do the openat on the host */
 //     dfd = open(std::filesystem::current_path().c_str(), O_RDONLY);
-//     int fd = openat(dfd, ECALL.string.c_str(), O_RDWR);
+//     int fd = openat(dfd, ECALLStates.at(feature->GetHartToExec()).string.c_str(), O_RDWR);
 
 //     AssignedThreads.at(HartToDecode)->AddFD(fd);
 
 //     /* openat returns the file descriptor of the opened file */
 //     RegFile->RV64[10] = fd;
 
-//     ECALL.string.clear();   //reset the ECALL buffers
-//     ECALL.buf[0] = '\0';
+//     ECALLStates.at(feature->GetHartToExec()).string.clear();   //reset the ECALL buffers
+//     ECALLStates.at(feature->GetHartToExec()).buf[0] = '\0';
 //     rtval = RevProc::ECALL_status_t::SUCCESS;
 //     DependencyClear(HartToExec, 10, false);
 //   }else{
 //     //first time through the ECALL
-//     mem->ReadVal<char>(HartToExec, filenameAddr, &ECALL.buf[0], inst.hazard, REVMEM_FLAGS(0x00));
+//     mem->ReadVal<char>(HartToExec, filenameAddr, &ECALLStates.at(feature->GetHartToExec()).buf[0], inst.hazard, REVMEM_FLAGS(0x00));
 //     DependencySet(HartToExec, 10, false);
 //     rtval = RevProc::ECALL_status_t::CONTINUE;
 //   }
@@ -634,49 +634,50 @@ RevProc::ECALL_status_t RevProc::ECALL_read(RevInst& inst){
 // 64, rev_write(unsigned int fd, const char  *buf, size_t count) 
 RevProc::ECALL_status_t RevProc::ECALL_write(RevInst& inst){
   output->verbose(CALL_INFO, 2, 0, "ECALL: write called\n");
+  std::cout << "HarttoExec = " << feature->GetHartToExec() << std::endl;
   auto fd = RegFile->GetX<int>(feature, 10);
   auto addr = RegFile->GetX<uint64_t>(feature, 11);
   auto nbytes = RegFile->GetX<uint64_t>(feature, 12);
   auto rtv = ECALL_status_t::ERROR;
 
-  if(ECALL.bytesRead){
+  if(ECALLStates.at(feature->GetHartToExec())->bytesRead){
     // Not our first time through... so capture previous read data
-    ECALL.string += std::string_view(ECALL.buf.data(), ECALL.bytesRead);
-    ECALL.bytesRead = 0;
+    ECALLStates.at(feature->GetHartToExec())->string += std::string_view(ECALLStates.at(feature->GetHartToExec())->buf.data(), ECALLStates.at(feature->GetHartToExec())->bytesRead);
+    ECALLStates.at(feature->GetHartToExec())->bytesRead = 0;
   }
 
-  auto nleft = nbytes - ECALL.string.size();
+  auto nleft = nbytes - ECALLStates.at(feature->GetHartToExec())->string.size();
   if(nleft == 0){
     // Perform the write on the host system
-    int rc = write(fd, ECALL.string.data(), ECALL.string.size());
+    int rc = write(fd, ECALLStates.at(feature->GetHartToExec())->string.data(), ECALLStates.at(feature->GetHartToExec())->string.size());
 
     // write returns the number of bytes written
     RegFile->SetX(feature, 10, rc);
 
     // Reset our tracking state
-    ECALL.clear();
+    ECALLStates.at(feature->GetHartToExec())->clear();
 
     DependencyClear(HartToExec, 10, false);
     rtv = ECALL_status_t::SUCCESS;
   }else if (0 == LSQueue->count(make_lsq_hash(10, RevRegClass::RegGPR, HartToExec)))  {
     auto readfunc = [&](auto* buf){
-      MemReq req (addr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->MarkLoadComplete);
+      MemReq req (addr + ECALLStates.at(feature->GetHartToExec())->string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true, RegFile->MarkLoadComplete);
       LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
       mem->ReadVal(HartToExec,
-                   addr + ECALL.string.size(),
+                   addr + ECALLStates.at(feature->GetHartToExec())->string.size(),
                    buf,
                    req,
                    REVMEM_FLAGS(0));
-      ECALL.bytesRead = sizeof(*buf);
+      ECALLStates.at(feature->GetHartToExec())->bytesRead = sizeof(*buf);
     };
     if(nleft >= 8){
-      readfunc(reinterpret_cast<uint64_t*>(ECALL.buf.data()));
+      readfunc(reinterpret_cast<uint64_t*>(ECALLStates.at(feature->GetHartToExec())->buf.data()));
     } else if(nleft >= 4){
-      readfunc(reinterpret_cast<uint32_t*>(ECALL.buf.data()));
+      readfunc(reinterpret_cast<uint32_t*>(ECALLStates.at(feature->GetHartToExec())->buf.data()));
     } else if(nleft >= 2){
-      readfunc(reinterpret_cast<uint16_t*>(ECALL.buf.data()));
+      readfunc(reinterpret_cast<uint16_t*>(ECALLStates.at(feature->GetHartToExec())->buf.data()));
     } else{
-      readfunc(reinterpret_cast<uint8_t*>(ECALL.buf.data()));
+      readfunc(reinterpret_cast<uint8_t*>(ECALLStates.at(feature->GetHartToExec())->buf.data()));
     }
     DependencySet(HartToExec, 10, false);
     rtv = ECALL_status_t::CONTINUE;
@@ -1659,21 +1660,21 @@ RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
  //  auto CloneArgsAddr = RegFile->GetX<uint64_t>(feature, 10);
  //  // auto SizeOfCloneArgs = RegFile()->GetX<size_t>(feature, 11);
 
- // if(0 == ECALL.bytesRead){
+ // if(0 == ECALLStates.at(feature->GetHartToExec()).bytesRead){
  //    // First time through the function...
  //    /* Fetch the clone_args */
  //    // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
  //                                // using the 1st uint64, so that's all we're going to fetch
- //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
+ //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALLStates.at(feature->GetHartToExec()).buf.data());
  //   mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, inst.hazard, REVMEM_FLAGS(0x00));
- //   ECALL.bytesRead = sizeof(*args);
+ //   ECALLStates.at(feature->GetHartToExec()).bytesRead = sizeof(*args);
  //   rtval = ECALL_status_t::CONTINUE;
  // }else{
  //    /*
  //    * Parse clone flags
  //    * NOTE: if no flags are set, we get fork() like behavior
  //    */
- //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
+ //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALLStates.at(feature->GetHartToExec()).buf.data());
  //    for( uint64_t bit=1; bit != 0; bit <<= 1 ){
  //      switch (*args & bit) {
  //        case CLONE_VM:
@@ -1798,7 +1799,7 @@ RevProc::ECALL_status_t RevProc::ECALL_clone(RevInst& inst){
 
  //    // clean up ecall state
  //    rtval = RevProc::ECALL_status_t::SUCCESS;
- //    ECALL.bytesRead = 0;
+ //    ECALLStates.at(feature->GetHartToExec()).bytesRead = 0;
 
  //  } //else
   return rtval;
@@ -2345,21 +2346,21 @@ RevProc::ECALL_status_t RevProc::ECALL_clone3(RevInst& inst){
  //  auto CloneArgsAddr = RegFile->GetX<uint64_t>(feature, 10);
  // auto SizeOfCloneArgs = RegFile()->GetX<size_t>(feature, 11);
 
- // if(0 == ECALL.bytesRead){
+ // if(0 == ECALLStates.at(feature->GetHartToExec()).bytesRead){
  //    // First time through the function...
  //    /* Fetch the clone_args */
  //    // struct clone_args args;  // So while clone_args is a whole struct, we appear to be only
  //                                // using the 1st uint64, so that's all we're going to fetch
- //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
+ //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALLStates.at(feature->GetHartToExec()).buf.data());
  //   mem->ReadVal<uint64_t>(HartToExec, CloneArgsAddr, args, inst.hazard, REVMEM_FLAGS(0x00));
- //   ECALL.bytesRead = sizeof(*args);
+ //   ECALLStates.at(feature->GetHartToExec()).bytesRead = sizeof(*args);
  //   rtval = ECALL_status_t::CONTINUE;
  // }else{
  //    /*
  //    * Parse clone flags
  //    * NOTE: if no flags are set, we get fork() like behavior
  //    */
- //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALL.buf.data());
+ //   uint64_t* args = reinterpret_cast<uint64_t*>(ECALLStates.at(feature->GetHartToExec()).buf.data());
  //    for( uint64_t bit=1; bit != 0; bit <<= 1 ){
  //      switch (*args & bit) {
  //        case CLONE_VM:
@@ -2484,7 +2485,7 @@ RevProc::ECALL_status_t RevProc::ECALL_clone3(RevInst& inst){
 
  //    // clean up ecall state
  //    rtval = RevProc::ECALL_status_t::SUCCESS;
- //    ECALL.bytesRead = 0;
+ //    ECALLStates.at(feature->GetHartToExec()).bytesRead = 0;
 
  //  } //else
   return rtval;

@@ -81,6 +81,11 @@ class RevThread {
   bool isBlocked();
   bool isDone();
 
+  // Consecutive instruction count
+  uint64_t GetActiveCycles() const { return ActiveCycles; }
+  void AddActiveCycle() { ActiveCycles++; }
+  void ResetActiveCycleCount() { ActiveCycles = 0; }
+
   friend std::ostream& operator<<(std::ostream& os, const RevThread& Thread){
 
     os << "\n";
@@ -174,6 +179,8 @@ class RevThread {
   std::set<int> fildes = {0, 1, 2  };      // Default file descriptors
 
   uint32_t WaitingToJoinTID = __INVALID_TID__;
+  
+  uint64_t ActiveCycles = 0;                       // Count of consecutive instructions executed
 
   };
 };

@@ -78,6 +78,10 @@ RevProc::RevProc( unsigned Id,
     output->fatal(CALL_INFO, -1,
                   "Error: failed to initialize the Ecall Table for core=%u\n", id );
 
+  for( unsigned i=0; i<_REV_HART_COUNT_; i++ ){
+    std::shared_ptr<ECALLState> NewECALLState = std::make_shared<ECALLState>();
+    ECALLStates.push_back(NewECALLState);
+  }
 
   // reset the core
   if( !Reset() )
@@ -389,7 +393,6 @@ bool RevProc::Reset(){
 
   HART_CTS.set();
 
-  ECALL.clear();
 
   return true;
 }
@@ -1624,24 +1627,49 @@ void RevProc::DependencySet(uint16_t HartID, uint16_t RegNum,
   }
 }
 
-uint16_t RevProc::GetHartID()const{
-  if(HART_CTS.none()) { return HartToDecode;};
-
+uint16_t RevProc::GetHartID() const {
   uint16_t nextID = HartToDecode;
-  if(HART_CTS[HartToDecode]){
-    nextID = HartToDecode;
-  }else{
-    for(int tID = 0; tID < _REV_HART_COUNT_; tID++){
-      nextID++;
-      if(nextID >= _REV_HART_COUNT_){
+  std::cout << "=====> Getting HartID" << std::endl;
+  // if(HART_CTS.none()) { 
+    // Try to execute next one
+    if( (AssignedThreads.size() > HartToDecode + 1) ){
+      nextID = HartToDecode + 1;
+      AssignedThreads.at(nextID)->ResetActiveCycleCount();
+      return nextID;
+    } else {
+      // Check if we can execute the first one
+      if( AssignedThreads.size() == 1 ){}
         nextID = 0;
+        AssignedThreads.at(nextID)->ResetActiveCycleCount();
+        return nextID;
       }
-      if(HART_CTS[nextID]){ break; };
-    }
+    // }
+
+
+  // if(HART_CTS[HartToDecode] ) {
+  //   nextID = HartToDecode;
+  // }else{
+  //   for(size_t tID = 0; tID < AssignedThreads.size(); tID++){
+  //     nextID++;
+  //     if(nextID >= _REV_HART_COUNT_){
+  //       nextID = 0;
+  //     }
+  //     if(HART_CTS[nextID]  ){
+  //       break; 
+  //     };
+  //   }
+  if( nextID != HartToDecode){
     output->verbose(CALL_INFO, 6, 0,
-                    "Core %u ; Thread switch from %d to %d\n",
+                    "Core %u ; Hart switch from %d to %d\n",
                     id, HartToDecode, nextID);
   }
+  // }
+  // Fix this
+  // if( nextID > AssignedThreads.size() - 1 ){
+  //   nextID = HartToDecode;
+  // }
+  // Set this threads consecutive insts executed to 0
+  AssignedThreads.at(nextID)->ResetActiveCycleCount();
   return nextID;
 }
 
@@ -1686,10 +1714,10 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
   //
   
   for( size_t HartID=0; HartID<AssignedThreads.size(); HartID++ ){
-    HART_CTS[HartID] = (AssignedThreads.at(HartID)->GetRegFile()->cost == 0);
+    HART_CTS[HartID] = (AssignedThreads.at(HartID)->GetActiveCycles() == 0);
   }
 
-  if( HART_CTS.any() && (!Halted)) {
+  if( (!Halted) ) {
     // fetch the next instruction
 
     //Determine the active thread
@@ -1777,6 +1805,7 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
         output->fatal(CALL_INFO, -1,
                     "Error: failed to execute instruction at PC=%" PRIx64 ".", ExecPC );
       }
+
 
 //      #define __REV_DEEP_TRACE__
       #ifdef __REV_DEEP_TRACE__
@@ -1901,6 +1930,8 @@ bool RevProc::ClockTick( SST::Cycle_t currentCycle ){
     }
   }
 
+  // Increment the consecutive instruction count for this thread
+  // AssignedThreads.at(HartToDecode)->AddActiveCycle();
   // walk the pipeline hazards.  if a load hazard is set, increase the cost to > 0
   /*for( auto i : Pipeline ){
     if( *(i.second.hazard) ){
@@ -2379,36 +2410,36 @@ RevProc::ECALL_status_t RevProc::ECALL_LoadAndParseString(RevInst& inst,
 
   // we don't know how long the path string is so read a byte (char)
   // at a time and search for the string terminator character '\0'
-  if(ECALL.bytesRead != 0){
-    ECALL.string += std::string_view(ECALL.buf.data(), ECALL.bytesRead);
-    ECALL.bytesRead = 0;
+  if(ECALLStates.at(HartToExec)->bytesRead != 0){
+    ECALLStates.at(HartToExec)->string += std::string_view(ECALLStates.at(HartToExec)->buf.data(), ECALLStates.at(HartToExec)->bytesRead);
+    ECALLStates.at(HartToExec)->bytesRead = 0;
   }
 
-  // We store the 0-terminator byte in ECALL.string to distinguish an empty
+  // We store the 0-terminator byte in ECALLStates.at(HartToExec).string to distinguish an empty
   // C string from no data read at all. If we read an empty string in the
-  // program, ECALL.string.size() == 1 with front() == back() == '\0'. If no
-  // data has been read yet, ECALL.string.size() == 0.
-  if(ECALL.string.size() && !ECALL.string.back()){
+  // program, ECALLStates.at(HartToExec).string.size() == 1 with front() == back() == '\0'. If no
+  // data has been read yet, ECALLStates.at(HartToExec).string.size() == 0.
+  if(ECALLStates.at(HartToExec)->string.size() && !ECALLStates.at(HartToExec)->string.back()){
     //found the null terminator - we're done
     // action is usually passed in as a lambda with local code and captures
-    // from the caller, such as performing a syscall using ECALL.string.
+    // from the caller, such as performing a syscall using ECALLStates.at(HartToExec).string.
     action();
 
-    ECALL.string.clear();   //reset the ECALL buffers
-    ECALL.bytesRead = 0;
+    ECALLStates.at(HartToExec)->string.clear();   //reset the ECALL buffers
+    ECALLStates.at(HartToExec)->bytesRead = 0;
 
     DependencyClear(HartToExec, 10, false);
     rtval = ECALL_status_t::SUCCESS;
   }else{
     //We are in the middle of the string - read one byte
-    MemReq req (straddr + ECALL.string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true,  std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1));
+    MemReq req (straddr + ECALLStates.at(HartToExec)->string.size(), 10, RevRegClass::RegGPR, HartToExec, MemOp::MemOpREAD, true,  std::bind(&RevProc::MarkLoadComplete, this, std::placeholders::_1));
     LSQueue->insert({make_lsq_hash(req.DestReg, req.RegType, req.Hart), req});
     mem->ReadVal(HartToExec,
-                 straddr + ECALL.string.size(),
-                 ECALL.buf.data(),
+                 straddr + ECALLStates.at(HartToExec)->string.size(),
+                 ECALLStates.at(HartToExec)->buf.data(),
                  req,
                  REVMEM_FLAGS(0));
-    ECALL.bytesRead = 1;
+    ECALLStates.at(HartToExec)->bytesRead = 1;
     DependencySet(HartToExec, 10, false);
     rtval = ECALL_status_t::CONTINUE;
   }
