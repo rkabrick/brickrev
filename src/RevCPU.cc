@@ -254,13 +254,13 @@ RevCPU::RevCPU( SST::ComponentId_t id, const SST::Params& params )
     // Create the processor objects
     Procs.reserve(Procs.size() + numCores);
     for( unsigned i=0; i<numCores; i++ ){
-      Procs.push_back( new RevProc( i, Opts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), CoProcs[i], &output ) );
+      Procs.push_back( new RevCore( i, Opts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), CoProcs[i], &output ) );
     }
   }else{
     // Create the processor objects
     Procs.reserve(Procs.size() + numCores);
     for( unsigned i=0; i<numCores; i++ ){
-      Procs.push_back( new RevProc( i, Opts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), NULL, &output ) );
+      Procs.push_back( new RevCore( i, Opts, Mem, Loader, AssignedThreads.at(i), this->GetNewTID(), NULL, &output ) );
     }
   }
 
@@ -2380,7 +2380,7 @@ void RevCPU::HandleFaultInjection(SST::Cycle_t currentCycle){
 }
 
 void RevCPU::UpdateCoreStatistics(uint16_t coreNum){
-  RevProc::RevProcStats stats = Procs[coreNum]->GetStats();
+  RevCore::RevCoreStats stats = Procs[coreNum]->GetStats();
   TotalCycles[coreNum]->addData(stats.totalCycles);
   CyclesWithIssue[coreNum]->addData(stats.cyclesBusy);
   FloatsRead[coreNum]->addData(stats.memStats.floatsRead);

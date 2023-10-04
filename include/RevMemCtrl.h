@@ -187,7 +187,7 @@ private:
   std::vector<uint8_t> membuf;          ///< RevMemOp: buffer
   StandardMem::Request::flags_t flags;  ///< RevMemOp: request flags
   void *target;                         ///< RevMemOp: target register pointer
-  MemReq procReq;                       ///< RevMemOp: original request from RevProc
+  MemReq procReq;                       ///< RevMemOp: original request from RevCore
 };
 
 // ----------------------------------------

@@ -33,7 +33,7 @@
 #include "RevMem.h"
 #include "RevMemCtrl.h"
 #include "RevLoader.h"
-#include "RevProc.h"
+#include "RevCore.h"
 #include "RevThread.h"
 #include "RevNIC.h"
 #include "PanNet.h"
@@ -132,7 +132,7 @@ public:
     {"nic", "Network interface", "SST::RevCPU::RevNIC"},
     {"pan_nic", "PAN Network interface", "SST::RevCPU::PanNet"},
     {"memory", "Memory interface to utilize for cache/memory hierachy", "SST::RevCPU::RevMemCtrl"},
-    {"co_proc", "Co-processor attached to RevProc", "SST::RevCPU::RevSimpleCoProc"},
+    {"co_proc", "Co-processor attached to RevCore", "SST::RevCPU::RevSimpleCoProc"},
     )
 
   // -------------------------------------------------------
@@ -202,7 +202,7 @@ public:
     {"TLBMissesPerCore",    "TLB misses per core",                                  "count",  1},
     )
 
-  // Passed as a function pointer to each RevProc for when they encounter a function that
+  // Passed as a function pointer to each RevCore for when they encounter a function that
   // results in a new RevThread being spawned
   std::function<uint32_t()> GetNewTID() {
     return std::function<uint32_t()>([this]() { return GetNewThreadID(); });
@@ -219,7 +219,7 @@ private:
   RevOpts *Opts;                      ///< RevCPU: Simulation options object
   RevMem *Mem;                        ///< RevCPU: RISC-V main memory object
   RevLoader *Loader;                  ///< RevCPU: RISC-V loader
-  std::vector<RevProc *> Procs;       ///< RevCPU: RISC-V processor objects
+  std::vector<RevCore *> Procs;       ///< RevCPU: RISC-V processor objects
   bool *Enabled;                      ///< RevCPU: Completion structure
 
   // Global table of threads

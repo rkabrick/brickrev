@@ -49,7 +49,7 @@ struct RevCoProc : SST::SubComponent {
   virtual ~RevCoProc();                               /// RevCoProc: Destructor
   virtual bool IssueInst(RevFeature *F, RevRegFile *R, RevMem *M, uint32_t Inst) = 0;          /// RevCoProc: Instruction Interface to RevCore
   virtual bool Reset() = 0;                           /// RevCoProc: Reset - called on startup
-  virtual bool Teardown() = 0;                        /// RevCoProc: Teardown - called when associated RevProc completes
+  virtual bool Teardown() = 0;                        /// RevCoProc: Teardown - called when associated RevCore completes
   virtual bool ClockTick(SST::Cycle_t cycle) = 0;     /// RevCoProc: Clock - can be called by SST or by overriding RevCPU
 
 protected:
@@ -106,7 +106,7 @@ public:
   /// RevSimpleCoProc: Reset the co-processor by emmptying the InstQ
   virtual bool Reset();
 
-  /// RevSimpleCoProv: Called when the attached RevProc completes simulation. Could be used to
+  /// RevSimpleCoProv: Called when the attached RevCore completes simulation. Could be used to
   ///                   also signal to SST that the co-processor is done if ClockTick is registered
   ///                   to SSTCore vs. being driven by RevCPU
   virtual bool Teardown() { return Reset(); };
@@ -127,7 +127,7 @@ private:
   /// RevSimpleCoProc: Total number of instructions retired
   Statistic<uint64_t>* num_instRetired;
 
-  /// Queue of instructions sent from attached RevProc
+  /// Queue of instructions sent from attached RevCore
   std::queue<RevCoProcInst> InstQ;
 
 }; //class RevSimpleCoProc

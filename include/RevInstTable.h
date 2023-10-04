@@ -75,8 +75,8 @@ enum EXCEPTION_CAUSE : uint32_t {
 };
 
 
-inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevProc: Thread is clear to start (proceed with decode)
-inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevProc: Thread is clear to execute (no register dependencides)
+inline std::bitset<_REV_HART_COUNT_> HART_CTS; ///< RevCore: Thread is clear to start (proceed with decode)
+inline std::bitset<_REV_HART_COUNT_> HART_CTE; ///< RevCore: Thread is clear to execute (no register dependencides)
 
 enum RevInstF : int {    ///< Rev CPU Instruction Formats
   RVTypeUNKNOWN = 0,     ///< RevInstf: Unknown format

@@ -29,7 +29,7 @@
 #include "RevOpts.h"
 #include "RevMem.h"
 #include "RevLoader.h"
-#include "RevProc.h"
+#include "RevCore.h"
 
 namespace SST {
 namespace RevCPU {
