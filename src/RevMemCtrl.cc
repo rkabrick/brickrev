@@ -84,12 +84,6 @@ RevMemOp::RevMemOp(unsigned Hart, uint64_t Addr, uint64_t PAddr,
   }
 }
 
-void RevMemOp::setTempT(std::vector<uint8_t> T){
-  for( auto i : T ){
-    tempT.push_back(i);
-  }
-}
-
 // ---------------------------------------------------------------
 // RevMemCtrl
 // ---------------------------------------------------------------
@@ -1384,7 +1378,6 @@ void RevBasicMemCtrl::performAMO(std::tuple<unsigned,
                               buffer,
                               MemOp::MemOpWRITE,
                               Tmp->getFlags());
-  Op->setTempT(tempT);
   for( unsigned i = 0; i < Op->getSize(); i++ ){
     TmpBuf8[i] = tempT[i];
   }
@@ -1469,7 +1462,6 @@ void RevBasicMemCtrl::handleWriteResp(StandardMem::WriteResp* ev){
     const MemReq& r = op->getMemReq();
     if( isAMO ){
       // write the target
-      std::vector<uint8_t> tempT = op->getTempT();
       r.MarkLoadComplete(r);
     }
     delete op;

@@ -561,13 +561,11 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
     // process the request locally
     char *TmpD = new char [8]{};
     char *TmpT = new char [8]{};
-    std::memset(TmpD, 0, 8);
     std::memcpy(TmpD, static_cast<char *>(Data), Len);
-    std::memset(TmpT, 0, 8);
 
     ReadMem(Hart, Addr, Len, Target, req, flags);
 
-    std::memcpy(TmpT, static_cast<char *>(Target), Len);
+    std::memcpy(TmpT, Target, Len);
     if( Len == 4 ){
       ApplyAMO(flags, Target, *(uint32_t *)(TmpD));
     }else{
@@ -576,11 +574,7 @@ bool RevMem::AMOMem(unsigned Hart, uint64_t Addr, size_t Len,
 
     WriteMem(Hart, Addr, Len, Target, flags);
 
-    if( Len == 4 ){
-      std::memcpy((uint32_t *)(Target), (uint32_t *)(TmpT), Len);
-    }else{
-      std::memcpy((uint64_t *)(Target), (uint64_t *)(TmpT), Len);
-    }
+    std::memcpy(Target, TmpT, Len);
 
     // clear the hazard
     req.MarkLoadComplete(req);

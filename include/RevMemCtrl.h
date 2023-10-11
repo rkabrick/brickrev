@@ -136,9 +136,6 @@ public:
   /// RevMemOp: retrieve the memory buffer
   std::vector<uint8_t> getBuf() const { return membuf; }
 
-  /// RevMemOp: retrieve the temporary target buffer
-  std::vector<uint8_t> getTempT() const { return tempT; }
-
   /// RevMemOp: retrieve the memory operation flags
   StandardMem::Request::flags_t getFlags() const { return flags; }
 
@@ -159,9 +156,6 @@ public:
 
   /// RevMemOp: set the originating memory request
   void setMemReq(const MemReq& req) { procReq = req;}
-
-  /// RevMemOp: set the temporary target buffer
-  void setTempT(std::vector<uint8_t> T);
 
   /// RevMemOp: retrieve the invalidate flag
   bool getInv() const { return Inv; }
