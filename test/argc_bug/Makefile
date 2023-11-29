@@ -11,8 +11,8 @@
 #
 
 # Python configuration file
-# REVCFG ?= ./rev-test-basim-memh.py
-REVCFG ?= ./rev-test-basim.py
+REVCFG ?= ./rev-test-basim-memh.py
+# REVCFG ?= ./rev-test-basim.py
 
 # Rev toolchain (for host Rev)
 CC=${RVCC}
@@ -29,9 +29,9 @@ REVLIBPATH ?= $(REVHOME)/build/src
 # rev core needs to use rv64imfdc to support compact instructions in stdlib (apparantly)
 ARCH             ?= rv64imfd
 ABI              ?= -mabi=lp64d
-NUM_LANES        ?= 1
-NUM_THR_PER_LANE ?= 1
-NUM_ELEM_PER_THREAD ?= 1
+NUM_LANES        ?= 64
+NUM_THR_PER_LANE ?= 4
+NUM_ELEM_PER_THREAD ?= 2
 CHUNK ?= 0
 
 # Targets

@@ -29,13 +29,13 @@ print(f"NUM_HARTS={numHarts}")
 # test args from env
 num_lanes = os.getenv("NUM_LANES", 1)
 num_thr_per_lane = os.getenv("NUM_THR_PER_LANE", 1)
-num_elem_per_lane = os.getenv("NUM_ELEM_PER_LANE", 1)
+num_elem_per_thread = os.getenv("NUM_ELEM_PER_THREAD", 1)
 chunk = os.getenv("CHUNK", 0)
-test_args = f"{num_lanes} {num_thr_per_lane} {num_elem_per_lane} {chunk}"
+test_args = f"{num_lanes} {num_thr_per_lane} {num_elem_per_thread} {chunk}"
 
 print(f"NUM_LANES={num_lanes}");
 print(f"NUM_THR_PER_LANE={num_thr_per_lane}");
-print(f"NUM_ELEM_PER_LANE={num_elem_per_lane}");
+print(f"NUM_ELEM_PER_THREAD={num_elem_per_thread}");
 print(f"CHUNK={chunk}");
 print(f"TEST_ARGS={test_args}");
 
