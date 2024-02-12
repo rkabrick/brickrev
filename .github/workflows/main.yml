@@ -12,7 +12,7 @@ jobs:
       id: check-label
       run: |
         LABELS=$(cat $GITHUB_EVENT_PATH | jq -r '.issue.labels[].name')
-        TARGET_LABEL="your-specific-label-here"
+        TARGET_LABEL="create-test"
         if [[ "$LABELS" == *"$TARGET_LABEL"* ]]; then
           echo "Label found."
           echo "::set-output name=matched::true"
