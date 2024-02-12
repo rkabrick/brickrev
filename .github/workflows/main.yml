@@ -1,0 +1,26 @@
+name: Issue Notification Workflow
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if issue uses specific template
+        id: check-template
+        run: |
+          ISSUE_BODY=$(cat $GITHUB_EVENT_PATH | jq .issue.body)
+          TEMPLATE_KEYWORD='sst-config'
+          if [[ "$ISSUE_BODY" == *"$TEMPLATE_KEYWORD"* ]]; then
+            echo "Using specific template."
+            echo "::set-output name=matched::true"
+          else
+            echo "Not using the specific template."
+            echo "::set-output name=matched::false"
+          fi
+      - name: Send notification
+        if: steps.check-template.outputs.matched == 'true'
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d '{"title":"${{ github.event.issue.title }}"}' https://35ac-216-236-163-215.ngrok-free.app/notify
