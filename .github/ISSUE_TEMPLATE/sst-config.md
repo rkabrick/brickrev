@@ -2,7 +2,7 @@
 name: sst-config
 about: Automate Bug Testing Addititon
 title: ''
-labels: ''
+labels: create-test
 assignees: ''
 
 ---
