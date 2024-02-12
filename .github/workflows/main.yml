@@ -23,4 +23,4 @@ jobs:
     - name: Send notification
       if: steps.check-label.outputs.matched == 'true'
       run: |
-        curl -X POST -H "Content-Type: application/json" -d '{"title":"${{ github.event.issue.title }}"}' https://wise-rats-invent.loca.lt:5000/notify
+        curl -X POST -H "Content-Type: application/json" -d '{"title":"${{ github.event.issue.title }}"}' https://wise-rats-invent.loca.lt/notify
