@@ -21,6 +21,6 @@ jobs:
           echo "::set-output name=matched::false"
         fi
     - name: Send notification
-      if: steps.check-template.outputs.matched == 'true'
+      if: steps.check-label.outputs.matched == 'true'
       run: |
         curl -X POST -H "Content-Type: application/json" -d '{"title":"${{ github.event.issue.title }}"}' https://5710-216-236-163-215.ngrok-free.app/notify
